@@ -148,7 +148,7 @@ class TmpNodeProto:
 
 
 class Node():
-    def __init__(self, n: onnx.NodeProto | TmpNodeProto):
+    def __init__(self, n: onnx.NodeProto or TmpNodeProto):
         self.name = n.name
         self.op_type = n.op_type
         self.nextnodes = []
@@ -2639,7 +2639,7 @@ class SplitNode(Node):
             outtensors[i].update_tensor(t)
 
 
-def create_node(n: onnx.NodeProto | TmpNodeProto):
+def create_node(n: onnx.NodeProto or TmpNodeProto):
     node_class = NODE_REGISTRY.get(n.op_type + 'Node')
     if node_class != None:
         instance = node_class(n)

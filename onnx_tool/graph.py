@@ -1370,11 +1370,13 @@ class Graph():
         self.macs = [0.0, 0.0]
         self.params = 0
         self.memory = 0
+        self.ofm_memory = 0
         for key in self.nodemap.keys():
             node = self.nodemap[key]
             itensors = []
             _params = 0
             _memory = 0
+            _ofm_memory = 0
             max_sparsity = 0
             block_sparsity = {'blocksize': (1, 1), 'blockratio': 0, 'ratio': 0}
 
@@ -1397,6 +1399,7 @@ class Graph():
                     # Constant's output tensors are already counted as weight tensors
                     continue
                 _memory += self.tensormap[output].get_memsize()
+                _ofm_memory += self.tensormap[output].get_memsize()
             macs = node.profile(itensors, otensors)
             outshape = (0,)
             if len(node.output) > 0:
@@ -1411,11 +1414,13 @@ class Graph():
             node.outshape = outshape
             node.params = _params
             node.memory = _memory
+            node.ofm_memory = _ofm_memory
             node.sparsity = block_sparsity
             self.macs[0] += macs[0]
             self.macs[1] += macs[1]
             self.params += _params
             self.memory += _memory
+            self.ofm_memory += _ofm_memory
 
         self.valid_profile = True
 
@@ -1442,6 +1447,7 @@ class Graph():
         backward_valid = backward_macs > 0
         params = int(self.params)
         memory = int(self.memory)
+        ofm_memory = int(self.memory)
 
         shared_size = 0
         for key in self.tensormap.keys():
@@ -1494,6 +1500,8 @@ class Graph():
                 row.append('{:.2%}'.format(node.macs[1] / backward_macs))
             row.append(num2str(int(node.memory), csvformat))
             row.append('{:.2%}'.format(node.memory / memory))
+            row.append(num2str(int(node.ofm_memory), csvformat))
+            row.append('{:.2%}'.format(node.ofm_memory / ofm_memory))
             row.append(num2str(int(node.params), csvformat))
             row.append('{:.2%}'.format(node.params / params))
             row.append(tuple2str(node.inshape, splitch))
@@ -1512,6 +1520,8 @@ class Graph():
             row.append('100%')
         row.append(num2str(int(memory), csvformat))
         row.append('100%')
+        row.append(num2str(int(ofm_memory), csvformat))
+        row.append('100%')
         row.append(num2str(int(params), csvformat))
         row.append('100%')
         row.append('_')
@@ -1529,7 +1539,7 @@ class Graph():
             header.extend(
                 ['Backward_' + metric, 'BPercent'])
         header.extend(
-            ['Memory', 'MPercent', 'Params',
+            ['Memory-WT-OFM(B)','MFPercent', 'Memory-OFM(B)', 'MPercent', 'Params',
              'PPercent', 'InShape',
              'OutShape'])
 
